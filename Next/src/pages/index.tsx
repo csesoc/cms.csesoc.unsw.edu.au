@@ -3,6 +3,8 @@ import Head from "next/head";
 import styled from "styled-components";
 import Events from './Events'
 import Homepage from "./Homepage";
+import Contact from "./contact";
+import Support from "./support";
 import AboutUs from './AboutUs';
 
 const PageContainer = styled.div`
@@ -35,9 +37,11 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        <Homepage />
+        <Homepage/>
         <AboutUs />
         <Events />
+        <Contact/>
+        <Support/>
       </main>
       <footer></footer>
     </PageContainer>
