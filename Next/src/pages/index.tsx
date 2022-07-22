@@ -6,6 +6,7 @@ import styled from "styled-components";
 import Homepage from "./Homepage";
 import Events from './Events'
 import AboutUs from './AboutUs';
+import Blog from "../components/reusableContainer"
 import HomepageCurve from "../svgs/HomepageCurve";
 import RectangleCurve from "../svgs/RectangleCurve";
 
