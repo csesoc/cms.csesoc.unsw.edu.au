@@ -173,3 +173,64 @@ func TestValidGetNestedPrimitive(t *testing.T) {
 	assert := assert.New(t)
 	assert.False(result.Bool())
 }
+
+func TestValidGetNumericalPath(t *testing.T) {
+	testObj := setupDocument()
+	path := "Content/0/ImageSource"
+	result, err := testObj.GetNumericalPath(path)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	assert := assert.New(t)
+	assert.Equal([]int{2, 0, 1}, result)
+}
+
+func TestInValidGetNumericalIndex(t *testing.T) {
+	testObj := setupDocument()
+	path := "Content/100/ImageDocumentID"
+	_, err := testObj.GetNumericalPath(path)
+	assert := assert.New(t)
+	assert.True(err != nil)
+}
+
+func TestValidCachedPathGetNumericalPath(t *testing.T) {
+	assert := assert.New(t)
+	testObj := setupDocument()
+	path := "Content/1/ParagraphChildren"
+	result, err := testObj.GetNumericalPath(path)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	assert.Equal([]int{2, 1, 2}, result)
+	// Check that getting a value already cached should work
+	result, err = testObj.GetNumericalPath(path)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	assert.Equal([]int{2, 1, 2}, result)
+}
+
+func TestValidCachedSubpathGetNumericalPath(t *testing.T) {
+	testObj := setupDocument()
+	path := "Content/1"
+	result, err := testObj.GetNumericalPath(path)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	assert := assert.New(t)
+	assert.Equal([]int{2, 1}, result)
+	// Check that getting a value with subpath cached should work
+	path = path + "/ParagraphChildren"
+	result, err = testObj.GetNumericalPath(path)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	assert.Equal([]int{2, 1, 2}, result)
+	// Check that getting a value with subpath up to a slice / array should work
+	path = path + "/0/Link"
+	result, err = testObj.GetNumericalPath(path)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	assert.Equal([]int{2, 1, 2, 0, 1}, result)
+}

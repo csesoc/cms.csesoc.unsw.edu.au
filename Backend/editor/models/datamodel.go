@@ -19,6 +19,7 @@ type Document struct {
 	DocumentName string
 	DocumentId   string
 	Content      []Component
+	tlb          map[string][]int
 }
 
 // TODO:
@@ -158,4 +159,75 @@ func (d Document) arrayEditUpdate(path string, index int, data interface{}) erro
 // Remove element in array at "index" position
 func (d Document) arrayEditRemove(path string, index int) error {
 	return nil
+}
+
+// Given a string path return the numerical list version of the path
+func (d *Document) GetNumericalPath(path string) ([]int, error) {
+	if d.tlb == nil {
+		d.tlb = make(map[string][]int)
+	}
+	if val, ok := d.tlb[path]; ok {
+		return val, nil
+	}
+
+	subpaths := strings.Split(path, "/")
+	numericalPath := make([]int, len(subpaths))
+	curr := reflect.ValueOf(*d)
+
+	// Extract as much of the subpath as we can from the cache
+	i := 0
+	subpath := subpaths[i]
+	subNumericalPath, hasSubpath := d.tlb[subpath]
+	for hasSubpath {
+		numericalPath[i] = subNumericalPath[i]
+		curr = getValueFromIndex(curr, numericalPath[i])
+		i++
+		subpath += "/" + subpaths[i]
+		subNumericalPath, hasSubpath = d.tlb[subpath]
+	}
+
+	// Loop through the subpaths and get numerical indexes
+	var index int
+	var err error
+	for ; i < len(subpaths); i++ {
+		// Get the next correct index
+		if curr.Kind() == reflect.Array || curr.Kind() == reflect.Slice {
+			index, err = strconv.Atoi(subpaths[i])
+			if err != nil || index >= curr.Len() || index < 0 {
+				return nil, errors.New("invalid target index")
+			}
+		} else {
+			for index = 0; index < curr.NumField(); index++ {
+				if curr.Type().Field(index).Name == subpaths[i] {
+					break
+				}
+			}
+			if index == curr.NumField() {
+				return nil, errors.New("invalid path, couldn't find subpath " + subpaths[i])
+			}
+		}
+		// Update curr and store index
+		curr = getValueFromIndex(curr, index)
+		numericalPath[i] = index
+		d.tlb[subpath] = numericalPath[:i+1]
+		subpath += "/" + subpaths[i]
+	}
+	d.tlb[path] = numericalPath
+	return d.tlb[path], nil
+}
+
+// Given (array | slice | struct) and an index return the value at that index
+func getValueFromIndex(curr reflect.Value, index int) reflect.Value {
+	switch curr.Kind() {
+	case reflect.Array:
+		curr = curr.Elem().Index(index)
+	case reflect.Slice:
+		curr = curr.Index(index)
+	case reflect.Struct:
+		curr = curr.Field(index)
+	}
+	if curr.Kind() == reflect.Interface {
+		curr = curr.Elem()
+	}
+	return curr
 }
